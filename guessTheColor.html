@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guess The Color</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: auto !important;
+            padding: 10px 0 !important;
+            margin: 0 !important;
+        }
+        
+        #table,
+        #main {
+            display: flex;
+            flex-direction: column;
+            background-color: burlywood;
+            width: min-content;
+            justify-content: center;
+            align-items: center;
+            border-radius: 20px;
+            position: relative;
+        }
+        
+        #table {
+            width: 90%;
+        }
+        
+        #main {
+            border: 4px solid saddlebrown;
+        }
+        
+        .row,
+        .mainrow {
+            display: flex;
+            flex-direction: row;
+            justify-content: center;
+            margin: 0 3vw 1vw 3vw;
+        }
+        
+        .left {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            padding: 0.5vh;
+            border-top: 2px solid saddlebrown;
+        }
+        
+        .right {
+            display: flex;
+            flex-direction: row;
+            border-top: 2px solid saddlebrown;
+            align-items: center;
+        }
+        
+        .left>div {
+            border: 0.3vh solid beige;
+            border-radius: 50%;
+            width: 2vh;
+            height: 2vh;
+            background-color: saddlebrown;
+            margin: 0.3vh;
+        }
+        
+        .right>div {
+            border: 0.5vh solid beige;
+            border-radius: 50%;
+            width: 3vh;
+            height: 3vh;
+            background-color: saddlebrown;
+            margin: 0.5vh;
+            position: relative;
+            cursor: pointer;
+        }
+        
+        .mainleft {
+            width: 7.4vh;
+        }
+        
+        .mainrow>.right {
+            border: none;
+        }
+        
+        .hide {
+            border: 0.5vh solid beige;
+            border-radius: 50%;
+            background-color: saddlebrown;
+            color: white;
+            font-size: 2.5vh;
+            font-weight: bold;
+            position: absolute;
+            top: -0.5vh;
+            left: -0.5vh;
+            width: 3vh;
+            height: 3vh;
+            text-align: center;
+            cursor: help;
+        }
+        
+        .gamebutton {
+            border: 3px solid saddlebrown;
+            background-color: burlywood;
+            border-radius: 10px;
+            text-align: center;
+            padding: 10px 15px;
+            font-size: 0.8em;
+            font-weight: bold;
+            color: saddlebrown;
+            cursor: pointer;
+            width: max-content;
+            margin-top: 10px;
+        }
+        
+        .gamebutton:hover {
+            background-color: #c9a67a;
+        }
+        
+        #modal {
+            width: 100vw;
+            height: 100vh;
+            background-color: rgba(100, 100, 100, 0.6);
+            position: absolute;
+            top: 0;
+            left: 0;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+            display: none;
+        }
+        
+        #modal>div {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background-color: white;
+            border: 3px solid darkslategrey;
+        }
+        
+        #modal>div>div {
+            padding: 20px;
+            margin: 10px;
+            text-align: center;
+            font-size: 3em;
+            display: flex;
+            flex-direction: row;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        #cancelButton,
+        #okButton {
+            width: 200px;
+            padding: 10px 0;
+            margin: 0 5px;
+            text-align: center;
+            font-size: 1em;
+            cursor: pointer;
+            border: thin solid darkslategrey;
+        }
+        
+        #cancelButton:hover,
+        #okButton:hover {
+            background-color: darkslategrey;
+            color: white;
+        }
+        
+        .unclickable .right div {
+            border: 0.5vh solid darkgray !important;
+        }
+        
+        #buttonbox {
+            display: flex;
+            flex-direction: row;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="modal">
+        <div>
+            <div id="modaltext">AreYourSure</div>
+            <div>
+                <div id="cancelButton">Cancel</div>
+                <div id="okButton">Ok</div>
+            </div>
+        </div>
+    </div>
+    <div id="main">
+        <div id="mainrow" class="mainrow">
+            <div class="mainleft"></div>
+            <div class="right">
+                <div>
+                    <div class="hide">?</div>
+                </div>
+                <div>
+                    <div class="hide">?</div>
+                </div>
+                <div>
+                    <div class="hide">?</div>
+                </div>
+                <div>
+                    <div class="hide">?</div>
+                </div>
+            </div>
+        </div>
+        <div id="table"></div>
+    </div>
+    <div id="buttonbox">
+        <div id="guessButton" class="gamebutton" onclick="guess()">Guess</div>
+        <div id="newGameButton" class="gamebutton" onclick="newGameConfirm('Are you sure you want to start a new game?', 0)">New Game</div>
+    </div>
+
+    <script>
+        var table = document.getElementById("table");
+        var colors = ["red", "blue", "yellow", "green", "darkorange", "purple"];
+        var rowcount;
+        var mainRow = document.getElementById("mainrow").lastChild.previousSibling.children;
+        var modal = document.getElementById("modal");
+        var cancelButton = document.getElementById("cancelButton");
+        var okButton = document.getElementById("okButton");
+        var modaltext = document.getElementById("modaltext");
+        var hides = document.querySelectorAll(".hide");
+        var chosencolors = [];
+
+        function newGame() {
+            while (table.firstChild) {
+                table.removeChild(table.lastChild);
+            }
+
+            for (let hide of hides) hide.style.display = "block";
+            chosencolors = [];
+            for (let i = 0; i < 10; i++) {
+                var row = document.createElement("div");
+                var left = document.createElement("div");
+                var right = document.createElement("div");
+                table.appendChild(row);
+                var idhelp = 10 - i;
+                row.id = "row" + idhelp;
+                row.classList.add("unclickable");
+                row.appendChild(left);
+                row.appendChild(right);
+                for (let i = 0; i < 4; i++) {
+                    var leftInside = document.createElement("div");
+                    left.appendChild(leftInside);
+                    leftInside.style.backgroundColor = "saddlebrown";
+                    var rightInside = document.createElement("div");
+                    right.appendChild(rightInside);
+                    rightInside.style.backgroundColor = "saddlebrown";
+                    rightInside.addEventListener("click", colorSelect);
+                }
+                row.classList.add("row");
+                left.classList.add("left");
+                right.classList.add("right");
+            }
+            document.getElementById("row1").classList.remove("unclickable");
+            rowcount = 1;
+            for (let i = 0; i < 4; i++) {
+                var rnd = Math.floor(Math.random() * 6);
+                chosencolors.push(colors[rnd]);
+            }
+
+
+        }
+
+        function colorSelect() {
+            if (this.parentNode.parentNode.classList.contains("unclickable") == false) {
+                var currentColor = this.style.backgroundColor;
+                if (currentColor == "saddlebrown") {
+                    this.style.backgroundColor = colors[0];
+                    currentColor = colors[0];
+                } else {
+                    if (colors.indexOf(currentColor) == colors.length - 1) {
+                        this.style.backgroundColor = colors[0];
+                        currentColor = colors[0];
+                    } else {
+                        this.style.backgroundColor = colors[colors.indexOf(currentColor) + 1];
+                        currentColor = colors[colors.indexOf(currentColor) + 1];
+                    }
+                }
+            }
+        }
+
+        function reveal() {
+            for (let i = 0; i < mainRow.length; i++) {
+                mainRow[i].style.backgroundColor = chosencolors[i];
+            }
+        }
+
+
+        function newGameConfirm(text, second) {
+            modal.style.display = "flex";
+            modaltext.innerHTML = text;
+            cancelButton.style.display = "block";
+            cancelButton.addEventListener("click", function() {
+                modal.style.display = "none";
+            });
+            if (second == 1) {
+                cancelButton.style.display = "none";
+                okButton.removeEventListener("click", addNewGame);
+                okButton.addEventListener("click", returnGame);
+            } else {
+                okButton.removeEventListener("click", returnGame);
+                okButton.addEventListener("click", addNewGame);
+            }
+        }
+
+        function addNewGame() {
+            newGame();
+            modal.style.display = "none";
+        }
+
+        function returnGame() {
+            modal.style.display = "none";
+        }
+
+        function guess() {
+            var currentId = "row" + rowcount;
+            var currentrow = document.getElementById(currentId);
+            var pins = currentrow.firstChild.childNodes;
+            var coloreds = currentrow.lastChild.childNodes;
+            var coloredColors = [];
+            var blacks = 0;
+            var greys = 0;
+            var blocked = [];
+            for (let color of coloreds) {
+                coloredColors.push(color.style.backgroundColor);
+            }
+            if (coloredColors.includes("saddlebrown")) {
+                newGameConfirm("You must color all of them!", 1);
+            } else {
+                for (let i = 0; i < coloreds.length; i++) {
+                    if (chosencolors[i] == coloreds[i].style.backgroundColor) {
+                        blacks++;
+                    } else {
+                        for (let j = 0; j < mainRow.length; j++) {
+                            if (coloreds[i].style.backgroundColor == chosencolors[j] && coloreds[j].style.backgroundColor != chosencolors[j] && blocked.includes(j) == false) {
+                                greys++;
+                                blocked.push(j);
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                for (let i = 0; i < blacks; i++) {
+                    pins[i].style.backgroundColor = "black";
+                }
+                for (let j = blacks; j < blacks + greys; j++) {
+                    pins[j].style.backgroundColor = "grey";
+                }
+
+                currentrow.classList.add("unclickable");
+
+                if (blacks == 4) {
+                    newGameConfirm("Congratulations! You have won in " + rowcount + " tries! Would you like to play again?", 0);
+                    for (let hide of hides) hide.style.display = "none";
+                    reveal();
+                } else {
+                    if (rowcount == 10) {
+                        newGameConfirm("Sorry! You didn't guess right for 10 times! Would you like to play again?", 0);
+                        for (let hide of hides) hide.style.display = "none";
+                        reveal();
+                    } else {
+                        rowcount++;
+                        var currentId = "row" + rowcount;
+                        var currentrow = document.getElementById(currentId);
+                        currentrow.classList.remove("unclickable");
+                    }
+                }
+            }
+        }
+
+        newGame();
+    </script>
+
+</body>
+
+</html>
